@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
-
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/routes/on_generate_route.dart';
 import '../widgets/email_field.dart';
 import '../widgets/password_field.dart';
+import '../providers/auth_provider.dart';
 
-class LoginPage extends StatelessWidget {
+class LoginPage extends ConsumerWidget {
   const LoginPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final emailController = TextEditingController();
     final passwordController = TextEditingController();
     final formKey = GlobalKey<FormState>();
+    final isLoading = ref.watch(loadingProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -31,21 +33,31 @@ class LoginPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 32.0),
-                EmailField(
-                  controller: emailController,
-                ),
+                EmailField(controller: emailController),
                 const SizedBox(height: 16.0),
-                PasswordField(
-                  controller: passwordController,
-                ),
+                PasswordField(controller: passwordController),
                 const SizedBox(height: 24.0),
                 ElevatedButton(
-                  onPressed: () {
+                  onPressed: isLoading
+                      ? null
+                      : () async {
                     if (formKey.currentState!.validate()) {
-                      debugPrint('Login validated with email: ${emailController.text}');
-                      Navigator.pushReplacementNamed(context, PageConst.home);
-                    } else {
-                      debugPrint('Login validation failed');
+                      ref.read(loadingProvider.notifier).state = true;
+                      try {
+                        final user = await ref.read(signInProvider).call(
+                          emailController.text,
+                          passwordController.text,
+                        );
+                        if (user != null) {
+                          Navigator.pushReplacementNamed(context, PageConst.home);
+                        }
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Login failed: $e')),
+                        );
+                      } finally {
+                        ref.read(loadingProvider.notifier).state = false;
+                      }
                     }
                   },
                   style: ElevatedButton.styleFrom(
@@ -54,12 +66,13 @@ class LoginPage extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8.0),
                     ),
                   ),
-                  child: const Text('Login'),
+                  child: isLoading
+                      ? const CircularProgressIndicator()
+                      : const Text('Login'),
                 ),
                 const SizedBox(height: 16.0),
                 TextButton(
                   onPressed: () {
-                    formKey.currentState!.validate();
                     Navigator.pushReplacementNamed(context, PageConst.signUp);
                   },
                   child: Text(

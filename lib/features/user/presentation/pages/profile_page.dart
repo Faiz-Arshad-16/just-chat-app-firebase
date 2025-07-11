@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/routes/on_generate_route.dart';
+import '../../../../core/utils/validators.dart';
 import '../widgets/password_field.dart';
+import '../providers/auth_provider.dart';
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
 
-  // Show dialog to change password
   void _showChangePasswordDialog(BuildContext context) {
     final newPasswordController = TextEditingController();
     final confirmPasswordController = TextEditingController();
@@ -32,24 +33,24 @@ class ProfilePage extends StatelessWidget {
                   controller: confirmPasswordController,
                   labelText: 'Confirm Password',
                   hintText: 'Confirm new password',
-                  isConfirmPassword: true,
-                  passwordToMatch: newPasswordController.text,
+                  validator: (value) => Validators.validatePasswordMatch(
+                    newPasswordController.text,
+                    value,
+                  ),
                 ),
               ],
             ),
           ),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.pop(context); // Close dialog
-              },
+              onPressed: () => Navigator.pop(context),
               child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () {
                 if (formKey.currentState!.validate()) {
-                  debugPrint('New password: ${newPasswordController.text}');
-                  Navigator.pop(context); // Close dialog
+                  print('New password: ${newPasswordController.text}');
+                  Navigator.pop(context);
                 }
               },
               child: Text(
@@ -64,9 +65,9 @@ class ProfilePage extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
-    const mockUsername = 'User'; // Mock username for profile picture
-    const mockEmail = 'user@example.com'; // Mock email
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(authStateProvider).valueOrNull;
+    final isLoading = ref.watch(loadingProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -78,7 +79,9 @@ class ProfilePage extends StatelessWidget {
               CircleAvatar(
                 radius: 48.0,
                 child: Text(
-                  mockUsername.isNotEmpty ? mockUsername[0].toUpperCase() : '?',
+                  user?.username.isNotEmpty == true
+                      ? user!.username[0].toUpperCase()
+                      : '?',
                   style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
                 ),
               ),
@@ -87,12 +90,12 @@ class ProfilePage extends StatelessWidget {
                 enabled: false,
                 decoration: InputDecoration(
                   labelText: 'Email',
-                  hintText: mockEmail,
+                  hintText: user?.email ?? 'user@example.com',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8.0),
                   ),
                 ),
-                controller: TextEditingController(text: mockEmail),
+                controller: TextEditingController(text: user?.email ?? 'user@example.com'),
               ),
               const SizedBox(height: 16.0),
               TextButton(
@@ -108,9 +111,23 @@ class ProfilePage extends StatelessWidget {
               ),
               const SizedBox(height: 24.0),
               ElevatedButton(
-                onPressed: () {
-                  debugPrint('Logged out');
-                  Navigator.pushReplacementNamed(context, PageConst.login);
+                onPressed: isLoading
+                    ? null
+                    : () async {
+                  print('Log Out button pressed');
+                  ref.read(loadingProvider.notifier).state = true;
+                  try {
+                    await ref.read(signOutProvider).call();
+                    print('User logged out');
+                    Navigator.pushReplacementNamed(context, PageConst.login);
+                  } catch (e) {
+                    print('Logout error: $e');
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Logout failed: $e')),
+                    );
+                  } finally {
+                    ref.read(loadingProvider.notifier).state = false;
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 48.0),
@@ -118,7 +135,9 @@ class ProfilePage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8.0),
                   ),
                 ),
-                child: const Text('Log Out'),
+                child: isLoading
+                    ? const CircularProgressIndicator()
+                    : const Text('Log Out'),
               ),
             ],
           ),

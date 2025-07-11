@@ -1,20 +1,23 @@
 import 'package:flutter/material.dart';
-
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/routes/on_generate_route.dart';
+import '../../../../core/utils/validators.dart';
 import '../widgets/email_field.dart';
 import '../widgets/password_field.dart';
 import '../widgets/username_field.dart';
+import '../providers/auth_provider.dart';
 
-class SignupPage extends StatelessWidget {
+class SignupPage extends ConsumerWidget {
   const SignupPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final usernameController = TextEditingController();
     final emailController = TextEditingController();
     final passwordController = TextEditingController();
     final confirmPasswordController = TextEditingController();
     final formKey = GlobalKey<FormState>();
+    final isLoading = ref.watch(loadingProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -34,36 +37,51 @@ class SignupPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 32.0),
-                UsernameField(
-                  controller: usernameController,
-                ),
+                UsernameField(controller: usernameController),
                 const SizedBox(height: 16.0),
-                EmailField(
-                  controller: emailController,
-                ),
+                EmailField(controller: emailController),
                 const SizedBox(height: 16.0),
-                PasswordField(
-                  controller: passwordController,
-                ),
+                PasswordField(controller: passwordController),
                 const SizedBox(height: 16.0),
                 PasswordField(
                   controller: confirmPasswordController,
                   labelText: 'Confirm Password',
                   hintText: 'Confirm your password',
-                  isConfirmPassword: true,
-                  passwordToMatch: passwordController.text,
+                  validator: (value) =>
+                      Validators.validatePasswordMatch(passwordController.text, value),
                 ),
                 const SizedBox(height: 24.0),
                 ElevatedButton(
-                  onPressed: () {
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                    print('Sign Up button pressed');
                     if (formKey.currentState!.validate()) {
-                      debugPrint(
-                        'Signup validated with username: ${usernameController.text}, '
-                            'email: ${emailController.text}',
-                      );
-                      Navigator.pushReplacementNamed(context, PageConst.home);
+                      print('Form validated');
+                      ref.read(loadingProvider.notifier).state = true;
+                      try {
+                        final user = await ref.read(signUpProvider).call(
+                          emailController.text,
+                          passwordController.text,
+                          usernameController.text,
+                        );
+                        print('Sign-up result: user=${user?.uid}');
+                        if (user != null) {
+                          print('Navigating to ${PageConst.home}');
+                          Navigator.pushReplacementNamed(context, PageConst.home);
+                        } else {
+                          print('Sign-up returned null user');
+                        }
+                      } catch (e) {
+                        print('Sign-up error: $e');
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Sign-up failed: $e')),
+                        );
+                      } finally {
+                        ref.read(loadingProvider.notifier).state = false;
+                      }
                     } else {
-                      debugPrint('Signup validation failed');
+                      print('Form validation failed');
                     }
                   },
                   style: ElevatedButton.styleFrom(
@@ -72,7 +90,9 @@ class SignupPage extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8.0),
                     ),
                   ),
-                  child: const Text('Sign Up'),
+                  child: isLoading
+                      ? const CircularProgressIndicator()
+                      : const Text('Sign Up'),
                 ),
                 const SizedBox(height: 16.0),
                 TextButton(
