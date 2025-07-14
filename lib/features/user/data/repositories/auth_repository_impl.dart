@@ -23,6 +23,16 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<void> forgotPassword(String email) {
+    return dataSource.forgotPassword(email);
+  }
+
+  @override
+  Future<void> changePassword(String newPassword) {
+    return dataSource.changePassword(newPassword);
+  }
+
+  @override
   Stream<UserEntity?> authStateChanges() {
     return dataSource.authStateChanges();
   }

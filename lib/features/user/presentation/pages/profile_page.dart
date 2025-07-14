@@ -8,10 +8,11 @@ import '../providers/auth_provider.dart';
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
 
-  void _showChangePasswordDialog(BuildContext context) {
+  void _showChangePasswordDialog(BuildContext context, WidgetRef ref) {
     final newPasswordController = TextEditingController();
     final confirmPasswordController = TextEditingController();
     final formKey = GlobalKey<FormState>();
+    final isLoading = ref.watch(loadingProvider);
 
     showDialog(
       context: context,
@@ -47,13 +48,29 @@ class ProfilePage extends ConsumerWidget {
               child: const Text('Cancel'),
             ),
             TextButton(
-              onPressed: () {
+              onPressed: isLoading
+                  ? null
+                  : () async {
                 if (formKey.currentState!.validate()) {
-                  print('New password: ${newPasswordController.text}');
-                  Navigator.pop(context);
+                  ref.read(loadingProvider.notifier).state = true;
+                  try {
+                    await ref.read(changePasswordProvider).call(newPasswordController.text);
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Password changed successfully')),
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Change password failed: $e')),
+                    );
+                  } finally {
+                    ref.read(loadingProvider.notifier).state = false;
+                  }
                 }
               },
-              child: Text(
+              child: isLoading
+                  ? const CircularProgressIndicator()
+                  : Text(
                 'Save',
                 style: TextStyle(color: Theme.of(context).colorScheme.primary),
               ),
@@ -99,7 +116,7 @@ class ProfilePage extends ConsumerWidget {
               ),
               const SizedBox(height: 16.0),
               TextButton(
-                onPressed: () => _showChangePasswordDialog(context),
+                onPressed: () => _showChangePasswordDialog(context, ref),
                 child: Text(
                   'Change Password',
                   style: TextStyle(

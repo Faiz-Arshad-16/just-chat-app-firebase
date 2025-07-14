@@ -50,6 +50,22 @@ class AuthFirebaseDataSource {
     await _auth.signOut();
   }
 
+  Future<void> forgotPassword(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+    } catch (e) {
+      throw Exception('Password reset failed: $e');
+    }
+  }
+
+  Future<void> changePassword(String newPassword) async {
+    try {
+      await _auth.currentUser!.updatePassword(newPassword);
+    } catch (e) {
+      throw Exception('Change password failed: $e');
+    }
+  }
+
   Stream<UserModel?> authStateChanges() {
     return _auth.authStateChanges().asyncMap((user) async {
       if (user == null) return null;

@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/datasources/auth_firebase_data_source.dart';
 import '../../data/repositories/auth_repository_impl.dart';
+import '../../domain/usecases/change_password.dart';
+import '../../domain/usecases/forgot_password.dart';
 import '../../domain/usecases/sign_in.dart';
 import '../../domain/usecases/sign_out.dart';
 import '../../domain/usecases/sign_up.dart';
@@ -25,6 +27,14 @@ final signUpProvider = Provider<SignUp>(
 
 final signOutProvider = Provider<SignOut>(
       (ref) => SignOut(ref.read(authRepositoryProvider)),
+);
+
+final forgotPasswordProvider = Provider<ForgotPassword>(
+      (ref) => ForgotPassword(ref.read(authRepositoryProvider)),
+);
+
+final changePasswordProvider = Provider<ChangePassword>(
+      (ref) => ChangePassword(ref.read(authRepositoryProvider)),
 );
 
 final authStateProvider = StreamProvider<UserEntity?>(
