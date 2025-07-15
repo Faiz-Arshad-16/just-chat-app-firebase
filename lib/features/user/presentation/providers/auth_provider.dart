@@ -1,12 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+import '../../../../core/providers/app_provider.dart';
 import '../../data/datasources/auth_firebase_data_source.dart';
 import '../../data/repositories/auth_repository_impl.dart';
-import '../../domain/usecases/change_password.dart';
-import '../../domain/usecases/forgot_password.dart';
 import '../../domain/usecases/sign_in.dart';
-import '../../domain/usecases/sign_out.dart';
 import '../../domain/usecases/sign_up.dart';
+import '../../domain/usecases/sign_out.dart';
+import '../../domain/usecases/forgot_password.dart';
+import '../../domain/usecases/change_password.dart';
 import '../../domain/entities/user_entity.dart';
 
 final authDataSourceProvider = Provider<AuthFirebaseDataSource>(
@@ -40,5 +40,3 @@ final changePasswordProvider = Provider<ChangePassword>(
 final authStateProvider = StreamProvider<UserEntity?>(
       (ref) => ref.read(authRepositoryProvider).authStateChanges(),
 );
-
-final loadingProvider = StateProvider<bool>((ref) => false);

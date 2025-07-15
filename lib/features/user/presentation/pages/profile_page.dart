@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/providers/app_provider.dart';
 import '../../../../core/routes/on_generate_route.dart';
 import '../../../../core/utils/validators.dart';
 import '../widgets/password_field.dart';
@@ -93,6 +94,15 @@ class ProfilePage extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  IconButton(onPressed: (){
+                    Navigator.pop(context);
+                  }, icon: const Icon(Icons.arrow_back)),
+                ],
+              ),
+              const SizedBox(height: 16.0),
               CircleAvatar(
                 radius: 48.0,
                 child: Text(

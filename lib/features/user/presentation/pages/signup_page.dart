@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/providers/app_provider.dart';
 import '../../../../core/routes/on_generate_route.dart';
 import '../../../../core/utils/validators.dart';
 import '../widgets/email_field.dart';
